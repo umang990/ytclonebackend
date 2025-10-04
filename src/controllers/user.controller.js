@@ -9,6 +9,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 
 
 const registerUser= asyncHandler(async (req,res)=>{
+    //console.log(req.body)
    //get user details from frontend
    //validation(check if fields are empty)
    //check if user already exits: username , email
@@ -41,8 +42,8 @@ const registerUser= asyncHandler(async (req,res)=>{
 
 
 
-    const avatarLocalPath= req.files?.avatar[0]?.path
-    const coverImageLocalPath=req.files?.coverImage[0]?.path
+    const avatarLocalPath= req.files?.avatar?.[0]?.path
+    const coverImageLocalPath=req.files?.coverImage?.[0]?.path
     if(!avatarLocalPath){
         throw new ApiError(400,"avatar is required")
     }
@@ -50,7 +51,10 @@ const registerUser= asyncHandler(async (req,res)=>{
 
 
     const avatarRef= await uploadOnCloudinary(avatarLocalPath)
-    const coverImageRef= await uploadOnCloudinary(coverImageLocalPath)
+    let coverImageRef = null;
+    if (coverImageLocalPath) {
+        coverImageRef = await uploadOnCloudinary(coverImageLocalPath);
+    }
 
 
     if(!avatarRef){
