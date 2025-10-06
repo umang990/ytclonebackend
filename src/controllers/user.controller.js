@@ -18,7 +18,7 @@ const generateAccessAndRefreshToken = async (userId) => {
 }
 
 
-
+//register user
 const registerUser = asyncHandler(async (req, res) => {
     //console.log(req.body)
     //get user details from frontend
@@ -182,6 +182,7 @@ const logoutUser=asyncHandler(async (req,res)=>{
 
 })
 
+//refresh access token
 const refreshAccessToken=asyncHandler(async(req,res)=>{
     //get refresh token from cookie
     //validate the refreshtoken 
@@ -223,4 +224,91 @@ const refreshAccessToken=asyncHandler(async(req,res)=>{
     }
 
 })
+
+
+//changeCurrentPassword
+
+const changeCurrentPassword=asyncHandler(async(req,res)=>{
+    // Get old password, new password, and confirm password from req.body
+    // Validate that all fields are provided
+    // Check if new password and confirm password match
+    // Find the user in the database using req.user._id
+    // Validate that the old password is correct
+    // Update the user's password with the new password
+    // Save the user and return a success response
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+    if (!oldPassword || !newPassword || !confirmPassword) {
+        throw new ApiError(400, "Old password, new password, and confirm password are required");
+    }
+    if (newPassword !== confirmPassword) {
+        throw new ApiError(400, "New password and confirm password do not match");
+    }
+    const user = await User.findById(req.user._id)
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+    if (!isPasswordCorrect) {
+        throw new ApiError(400, "Old password is incorrect");
+    }
+    user.password = newPassword;
+    await user.save({validateBeforeSave: false});
+    return res.status(200).json(new ApiResponse(200, {}, "Password changed successfully"));
+
+})
+
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+    if (!req.user) {
+        throw new ApiError(404, "User not found");
+    }
+    return res.status(200).json(new ApiResponse(200, req.user, "User fetched successfully"));
+});
+
+// we write different controller for updating images or files
+//here we will update only text fields
+const updateUserDetails = asyncHandler(async (req, res) => {
+    //get user details from req.body
+    //check if user exists in DB
+    //update user details
+    //return updated user details
+    const { fullName, email} = req.body
+    if(!fullName || !email){
+        throw new ApiError(400,"fullName and email are required")
+    }
+    const user= await User.findById(req.user._id)
+    if(!user){
+        throw new ApiError(404,"user not found")    
+    }
+    const updatedUser=await User.findByIdAndUpdate( 
+        req.user._id,
+        {
+            $set:{
+                fullName:fullName,
+                email:email
+            }
+        },
+        {
+            new:true
+        }
+    ).select("-password -refreshToken") 
+
+    if(!updatedUser){
+        throw new ApiError(500,"something went wrong while updating user details")
+    }
+
+    return res.status(200).json(new ApiResponse(200,updatedUser,"user details updated successfully"))
+
+})
+
+
+
+
+
+
+    
+    
+
+
+ 
 export { registerUser, loginUser, logoutUser , refreshAccessToken}
